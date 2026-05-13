@@ -1,0 +1,2653 @@
+{
+  "datasets": [
+    {
+      "name": "f45cc601",
+      "displayName": "KPI — Average Hourly Wage",
+      "queryLines": [
+        "SELECT\r\n",
+        "  ROUND(\r\n",
+        "    SUM(avg_hourly_rate * placements) / SUM(placements), \r\n",
+        "    2\r\n",
+        "  ) AS avg_hourly_wage\r\n",
+        "FROM\r\n",
+        "  `co-op_data`.default.salary_by_major"
+      ],
+      "catalog": "co-op_data",
+      "schema": "default"
+    },
+    {
+      "name": "99c917ca",
+      "displayName": "Total Placements",
+      "queryLines": [
+        "SELECT\r\n",
+        "  SUM(placements) AS total_placements\r\n",
+        "FROM\r\n",
+        "  `co-op_data`.default.salary_by_major"
+      ]
+    },
+    {
+      "name": "ee25bc9e",
+      "displayName": "Active Employers",
+      "queryLines": [
+        "SELECT COUNT(DISTINCT employer) AS active_employers\r\n",
+        "FROM `co-op_data`.default.salary_by_employer;"
+      ]
+    },
+    {
+      "name": "4d834717",
+      "displayName": "Specialization / Major Insights",
+      "queryLines": [
+        "SELECT\r\n",
+        "  primary_major,\r\n",
+        "  avg_hourly_rate,\r\n",
+        "  placements\r\n",
+        "FROM `co-op_data`.default.salary_by_major\r\n",
+        "ORDER BY avg_hourly_rate DESC\r\n",
+        "LIMIT 10;"
+      ]
+    },
+    {
+      "name": "4c32da21",
+      "displayName": "Trends Over Time",
+      "queryLines": [
+        "SELECT\n",
+        "  year AS Year,\n",
+        "  avg_hourly_rate,\n",
+        "  placements\n",
+        "FROM\n",
+        "  `co-op_data`.default.salary_by_year\n",
+        "WHERE\n",
+        "  array_contains(:selected_years, CAST(year AS INT))\n",
+        "ORDER BY\n",
+        "  year"
+      ],
+      "parameters": [
+        {
+          "displayName": "Selected Years",
+          "keyword": "selected_years",
+          "dataType": "INTEGER",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "INTEGER",
+              "values": [
+                {
+                  "value": "2020"
+                },
+                {
+                  "value": "2021"
+                },
+                {
+                  "value": "2022"
+                },
+                {
+                  "value": "2023"
+                },
+                {
+                  "value": "2024"
+                },
+                {
+                  "value": "2025"
+                },
+                {
+                  "value": "2026"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "catalog": "co-op_data",
+      "schema": "default"
+    },
+    {
+      "name": "bc94b4a4",
+      "displayName": "Avg Wage by State",
+      "queryLines": [
+        "SELECT\r\n",
+        "  state,\r\n",
+        "  avg_hourly_rate,\r\n",
+        "  placements\r\n",
+        "FROM `co-op_data`.default.salary_by_state\r\n",
+        "ORDER BY avg_hourly_rate DESC\r\n",
+        "LIMIT 10;"
+      ]
+    },
+    {
+      "name": "5f2da126",
+      "displayName": "Placement Channels",
+      "queryLines": [
+        "SELECT\r\n",
+        "  job_source,\r\n",
+        "  placements,\r\n",
+        "  avg_hourly_rate\r\n",
+        "FROM `co-op_data`.default.salary_by_job_source\r\n",
+        "ORDER BY placements DESC\r\n",
+        "Limit 10;"
+      ]
+    },
+    {
+      "name": "26201661",
+      "displayName": "Employer Rankings",
+      "queryLines": [
+        "SELECT\r\n",
+        "  employer,\r\n",
+        "  employer_industry,\r\n",
+        "  total_placements,\r\n",
+        "  avg_hourly_rate,\r\n",
+        "  rank_by_placements\r\n",
+        "FROM `co-op_data`.default.employer_rankings\r\n",
+        "WHERE rank_by_placements <= 10\r\n",
+        "ORDER BY rank_by_placements;"
+      ]
+    },
+    {
+      "name": "210fd95e",
+      "displayName": "Employer Hiring vs Pay Trends (2020–Present)",
+      "queryLines": [
+        "WITH top_employers AS (\n",
+        "  SELECT\n",
+        "    employer\n",
+        "  FROM\n",
+        "    `co-op_data`.default.salary_by_employer\n",
+        "  WHERE\n",
+        "    placements >= 10\n",
+        "  ORDER BY\n",
+        "    placements DESC\n",
+        "  LIMIT 10\n",
+        "),\n",
+        "employer_yearly_trends AS (\n",
+        "  SELECT\n",
+        "    Year,\n",
+        "    Employer,\n",
+        "    COUNT(*) AS total_placements,\n",
+        "    ROUND(AVG(Hourly_Rate), 2) AS avg_hourly_rate\n",
+        "  FROM\n",
+        "    `co-op_data`.default.lindner_coop_cleaned_data\n",
+        "  WHERE\n",
+        "    Year >= 2020\n",
+        "    AND Employer IN (\n",
+        "      SELECT\n",
+        "        employer\n",
+        "      FROM\n",
+        "        top_employers\n",
+        "    )\n",
+        "    AND Hourly_Rate IS NOT NULL\n",
+        "    AND array_contains(:selected_years, CAST(Year AS INT))\n",
+        "  GROUP BY\n",
+        "    Year,\n",
+        "    Employer\n",
+        ")\n",
+        "SELECT\n",
+        "  *\n",
+        "FROM\n",
+        "  employer_yearly_trends\n",
+        "ORDER BY\n",
+        "  Employer,\n",
+        "  Year"
+      ],
+      "parameters": [
+        {
+          "displayName": "Selected Years",
+          "keyword": "selected_years",
+          "dataType": "INTEGER",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "INTEGER",
+              "values": [
+                {
+                  "value": "2020"
+                },
+                {
+                  "value": "2021"
+                },
+                {
+                  "value": "2022"
+                },
+                {
+                  "value": "2023"
+                },
+                {
+                  "value": "2024"
+                },
+                {
+                  "value": "2025"
+                },
+                {
+                  "value": "2026"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "catalog": "co-op_data",
+      "schema": "default"
+    },
+    {
+      "name": "8bf4b941",
+      "displayName": "Churn KPI",
+      "queryLines": [
+        "SELECT COUNT(*)\r\n",
+        "FROM `co-op_data`.default.employer_churn_status\r\n",
+        "WHERE churn_status = 'Churned';"
+      ],
+      "catalog": "co-op_data",
+      "schema": "default"
+    },
+    {
+      "name": "8137e260",
+      "displayName": "Employer Churn Status Overview",
+      "queryLines": [
+        "SELECT\r\n",
+        "  churn_status,\r\n",
+        "  COUNT(*) AS employer_count\r\n",
+        "FROM `co-op_data`.default.employer_churn_status\r\n",
+        "GROUP BY churn_status;"
+      ],
+      "catalog": "co-op_data",
+      "schema": "default"
+    },
+    {
+      "name": "c65ac6cd",
+      "displayName": "Churned Employers",
+      "queryLines": [
+        "SELECT\r\n",
+        "  employer,\r\n",
+        "  last_active_year\r\n",
+        "FROM `co-op_data`.default.employer_churn_status\r\n",
+        "WHERE churn_status = 'Churned'\r\n",
+        "ORDER BY last_active_year;"
+      ],
+      "catalog": "co-op_data",
+      "schema": "default"
+    },
+    {
+      "name": "1f0ed753",
+      "displayName": "Active Employer Count Over Time",
+      "queryLines": [
+        "SELECT\n",
+        "  Year,\n",
+        "  COUNT(DISTINCT Employer) AS active_employers\n",
+        "FROM\n",
+        "  `co-op_data`.default.lindner_coop_cleaned_data\n",
+        "WHERE\n",
+        "  array_contains(:selected_years, CAST(Year AS INT))\n",
+        "GROUP BY\n",
+        "  Year\n",
+        "ORDER BY\n",
+        "  Year"
+      ],
+      "parameters": [
+        {
+          "displayName": "Selected Years",
+          "keyword": "selected_years",
+          "dataType": "INTEGER",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "INTEGER",
+              "values": [
+                {
+                  "value": "2020"
+                },
+                {
+                  "value": "2021"
+                },
+                {
+                  "value": "2022"
+                },
+                {
+                  "value": "2023"
+                },
+                {
+                  "value": "2024"
+                },
+                {
+                  "value": "2025"
+                },
+                {
+                  "value": "2026"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "catalog": "co-op_data",
+      "schema": "default"
+    },
+    {
+      "name": "c84fc96a",
+      "displayName": "Churned Employers by Years Inactive",
+      "queryLines": [
+        "SELECT\r\n",
+        "  employer,\r\n",
+        "  (global_latest_year - last_active_year) AS years_inactive\r\n",
+        "FROM `co-op_data`.default.employer_churn_status\r\n",
+        "WHERE churn_status = 'Churned'\r\n",
+        "ORDER BY years_inactive DESC;"
+      ],
+      "catalog": "co-op_data",
+      "schema": "default"
+    },
+    {
+      "name": "55784e66",
+      "displayName": "Top 10 High‑Value Employers Who Have Churned",
+      "queryLines": [
+        "WITH employer_history AS (\r\n",
+        "    SELECT\r\n",
+        "        Employer,\r\n",
+        "        COUNT(*) AS total_placements\r\n",
+        "    FROM `co-op_data`.default.lindner_coop_cleaned_data\r\n",
+        "    GROUP BY Employer\r\n",
+        "),\r\n",
+        "churned_employers AS (\r\n",
+        "    SELECT\r\n",
+        "        e.Employer AS employer,\r\n",
+        "        e.total_placements,\r\n",
+        "        c.last_active_year\r\n",
+        "    FROM employer_history e\r\n",
+        "    JOIN `co-op_data`.default.employer_churn_status c\r\n",
+        "        ON e.Employer = c.employer\r\n",
+        "    WHERE c.churn_status = 'Churned'\r\n",
+        ")\r\n",
+        "SELECT *\r\n",
+        "FROM churned_employers\r\n",
+        "ORDER BY total_placements DESC\r\n",
+        "LIMIT 10;"
+      ],
+      "catalog": "co-op_data",
+      "schema": "default"
+    },
+    {
+      "name": "state_placements_map",
+      "displayName": "Student Placements by State (Map)",
+      "queryLines": [
+        "SELECT\n",
+        "  CONCAT('US-', state) AS state_code,\n",
+        "  placements,\n",
+        "  avg_hourly_rate,\n",
+        "  state AS state_name\n",
+        "FROM\n",
+        "  `co-op_data`.default.salary_by_state\n",
+        "ORDER BY\n",
+        "  placements DESC;"
+      ]
+    },
+    {
+      "name": "yoy_growth",
+      "displayName": "Year-over-Year Placement Growth",
+      "queryLines": [
+        "WITH all_years AS (\n",
+        "  -- Get placement counts for ALL years first (before filtering)\n",
+        "  SELECT\n",
+        "    Year,\n",
+        "    COUNT(*) AS total_placements\n",
+        "  FROM\n",
+        "    `co-op_data`.default.lindner_coop_cleaned_data\n",
+        "  WHERE\n",
+        "    Year IS NOT NULL\n",
+        "  GROUP BY\n",
+        "    Year\n",
+        "),\n",
+        "growth_calc AS (\n",
+        "  -- Calculate YoY growth based on consecutive calendar years\n",
+        "  SELECT\n",
+        "    Year,\n",
+        "    total_placements,\n",
+        "    LAG(total_placements) OVER (ORDER BY Year) AS prev_year_placements,\n",
+        "    CASE\n",
+        "      WHEN\n",
+        "        LAG(total_placements) OVER (ORDER BY Year) IS NOT NULL\n",
+        "        AND LAG(total_placements) OVER (ORDER BY Year) > 0\n",
+        "      THEN\n",
+        "        ROUND(\n",
+        "          (\n",
+        "            (total_placements - LAG(total_placements) OVER (ORDER BY Year))\n",
+        "              * 100.0\n",
+        "              / LAG(total_placements) OVER (ORDER BY Year)\n",
+        "          ),\n",
+        "          2\n",
+        "        )\n",
+        "      ELSE NULL\n",
+        "    END AS yoy_growth_rate_pct\n",
+        "  FROM\n",
+        "    all_years\n",
+        ")\n",
+        "-- Now apply the year filter for display\n",
+        "SELECT\n",
+        "  Year,\n",
+        "  total_placements,\n",
+        "  prev_year_placements,\n",
+        "  yoy_growth_rate_pct\n",
+        "FROM\n",
+        "  growth_calc\n",
+        "WHERE\n",
+        "  array_contains(:selected_years, CAST(Year AS INT))\n",
+        "ORDER BY\n",
+        "  Year"
+      ],
+      "parameters": [
+        {
+          "displayName": "Selected Years",
+          "keyword": "selected_years",
+          "dataType": "INTEGER",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "INTEGER",
+              "values": [
+                {
+                  "value": "2020"
+                },
+                {
+                  "value": "2021"
+                },
+                {
+                  "value": "2022"
+                },
+                {
+                  "value": "2023"
+                },
+                {
+                  "value": "2024"
+                },
+                {
+                  "value": "2025"
+                },
+                {
+                  "value": "2026"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "catalog": "co-op_data",
+      "schema": "default"
+    },
+    {
+      "name": "year_filter",
+      "displayName": "Year Filter Values",
+      "queryLines": [
+        "SELECT DISTINCT\n",
+        "  Year\n",
+        "FROM\n",
+        "  `co-op_data`.default.lindner_coop_cleaned_data\n",
+        "WHERE\n",
+        "  Year IS NOT NULL\n",
+        "ORDER BY\n",
+        "  Year DESC"
+      ]
+    },
+    {
+      "name": "employer_segments",
+      "displayName": "Employer Segmentation Analysis",
+      "queryLines": [
+        "SELECT\n",
+        "  Employer AS employer,\n",
+        "  Total_Hires AS placements,\n",
+        "  Avg_Salary AS avg_hourly_rate,\n",
+        "  Tier_Name AS segment\n",
+        "FROM\n",
+        "  `co-op_data`.default.lcs_employer_segments\n",
+        "ORDER BY\n",
+        "  Total_Hires DESC"
+      ]
+    },
+    {
+      "name": "segment_summary",
+      "displayName": "Segment Summary Statistics",
+      "queryLines": [
+        "SELECT\n",
+        "  Tier_Name AS segment,\n",
+        "  COUNT(*) AS employer_count,\n",
+        "  ROUND(AVG(Total_Hires), 1) AS avg_placements,\n",
+        "  ROUND(AVG(Avg_Salary), 2) AS avg_hourly_rate,\n",
+        "  SUM(Total_Hires) AS total_placements\n",
+        "FROM\n",
+        "  `co-op_data`.default.lcs_employer_segments\n",
+        "GROUP BY\n",
+        "  Tier_Name\n",
+        "ORDER BY\n",
+        "  Tier_Name"
+      ]
+    },
+    {
+      "name": "top_employers_by_segment",
+      "displayName": "Top Employers by Segment",
+      "queryLines": [
+        "WITH ranked AS (\n",
+        "  SELECT\n",
+        "    Tier_Name AS segment,\n",
+        "    Employer AS employer,\n",
+        "    Total_Hires AS placements,\n",
+        "    Avg_Salary AS avg_hourly_rate,\n",
+        "    ROW_NUMBER() OVER (\n",
+        "        PARTITION BY Tier_Name\n",
+        "        ORDER BY Total_Hires DESC, Avg_Salary DESC\n",
+        "      ) AS rank_in_segment\n",
+        "  FROM\n",
+        "    `co-op_data`.default.lcs_employer_segments\n",
+        ")\n",
+        "SELECT\n",
+        "  segment,\n",
+        "  employer,\n",
+        "  placements,\n",
+        "  avg_hourly_rate,\n",
+        "  rank_in_segment\n",
+        "FROM\n",
+        "  ranked\n",
+        "WHERE\n",
+        "  rank_in_segment <= 5\n",
+        "ORDER BY\n",
+        "  segment,\n",
+        "  rank_in_segment"
+      ]
+    },
+    {
+      "name": "cluster_quality",
+      "displayName": "Elbow Chart Data",
+      "queryLines": [
+        "SELECT\n",
+        "  k,\n",
+        "  inertia\n",
+        "FROM\n",
+        "  `co-op_data`.default.lcs_elbow_data\n",
+        "ORDER BY\n",
+        "  k"
+      ]
+    },
+    {
+      "name": "industry_by_segment",
+      "displayName": "Industry Distribution by Segment",
+      "queryLines": [
+        "WITH top_industries AS (\n",
+        "  SELECT\n",
+        "    r.employer_industry AS industry,\n",
+        "    COUNT(*) AS total_employer_count\n",
+        "  FROM\n",
+        "    `co-op_data`.default.lcs_employer_segments s\n",
+        "      LEFT JOIN `co-op_data`.default.employer_rankings r\n",
+        "        ON s.Employer = r.employer\n",
+        "  WHERE\n",
+        "    r.employer_industry IS NOT NULL\n",
+        "  GROUP BY\n",
+        "    r.employer_industry\n",
+        "  ORDER BY\n",
+        "    total_employer_count DESC\n",
+        "  LIMIT 10\n",
+        ")\n",
+        "SELECT\n",
+        "  s.Tier_Name AS segment,\n",
+        "  r.employer_industry AS industry,\n",
+        "  COUNT(*) AS employer_count,\n",
+        "  SUM(s.Total_Hires) AS total_placements\n",
+        "FROM\n",
+        "  `co-op_data`.default.lcs_employer_segments s\n",
+        "    LEFT JOIN `co-op_data`.default.employer_rankings r\n",
+        "      ON s.Employer = r.employer\n",
+        "WHERE\n",
+        "  r.employer_industry IN (\n",
+        "    SELECT\n",
+        "      industry\n",
+        "    FROM\n",
+        "      top_industries\n",
+        "  )\n",
+        "GROUP BY\n",
+        "  s.Tier_Name,\n",
+        "  r.employer_industry\n",
+        "ORDER BY\n",
+        "  s.Tier_Name,\n",
+        "  employer_count DESC"
+      ]
+    },
+    {
+      "name": "salary_distribution_boxplot",
+      "displayName": "Salary Distribution by Segment (Box Plot)",
+      "queryLines": [
+        "SELECT\n",
+        "  Tier_Name AS segment,\n",
+        "  Avg_Salary AS avg_hourly_rate\n",
+        "FROM\n",
+        "  `co-op_data`.default.lcs_employer_segments\n",
+        "ORDER BY\n",
+        "  Tier_Name"
+      ]
+    },
+    {
+      "name": "segment_kpis",
+      "displayName": "Segment Overview KPIs",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(DISTINCT Tier_Name) AS total_segments,\n",
+        "  COUNT(*) AS total_employers,\n",
+        "  ROUND(AVG(Avg_Salary), 2) AS overall_avg_rate,\n",
+        "  SUM(Total_Hires) AS total_placements\n",
+        "FROM\n",
+        "  `co-op_data`.default.lcs_employer_segments"
+      ]
+    },
+    {
+      "name": "all_employers_by_segment",
+      "displayName": "Complete Employer List by Segment",
+      "queryLines": [
+        "SELECT\n",
+        "  Tier_Name AS segment,\n",
+        "  Employer AS employer,\n",
+        "  Total_Hires AS placements,\n",
+        "  Avg_Salary AS avg_hourly_rate,\n",
+        "  Median_Salary AS median_hourly_rate\n",
+        "FROM\n",
+        "  `co-op_data`.default.lcs_employer_segments\n",
+        "ORDER BY\n",
+        "  Tier_Name,\n",
+        "  Total_Hires DESC"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "7fc21c2d",
+      "displayName": "LCS Co-op & scholarship Analytics",
+      "layout": [
+        {
+          "widget": {
+            "name": "average-hourly-wage",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f45cc601",
+                  "fields": [
+                    {
+                      "name": "avg_hourly_wage",
+                      "expression": "`avg_hourly_wage`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Average Hourly Wage",
+                "showDescription": true,
+                "description": "The overall average hourly wage earned by students across all co‑op \nplacements in the selected time period."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_hourly_wage"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "total-student-placements",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "99c917ca",
+                  "fields": [
+                    {
+                      "name": "total_placements",
+                      "expression": "`total_placements`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Total Student Placements",
+                "showDescription": true,
+                "description": "The total number of co‑op placements recorded in the dataset \nreflects the overall program scale and activity."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_placements"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "active-employers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ee25bc9e",
+                  "fields": [
+                    {
+                      "name": "active_employers",
+                      "expression": "`active_employers`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Active Employers",
+                "showDescription": true,
+                "description": "The number of distinct employers that have \nhired at least one student through LCS co‑op \nplacements."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "active_employers"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 2,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "average-hourly-wage-major",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4d834717",
+                  "fields": [
+                    {
+                      "name": "placements",
+                      "expression": "`placements`"
+                    },
+                    {
+                      "name": "avg_hourly_rate",
+                      "expression": "`avg_hourly_rate`"
+                    },
+                    {
+                      "name": "primary_major",
+                      "expression": "`primary_major`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Average Hourly Wage by Major",
+                "showDescription": true,
+                "description": "Compares average hourly wages across academic majors to highlight differences in compensation outcomes by field of study."
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg_hourly_rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "primary_major",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "placements",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true,
+                  "showTotal": false
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 53,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "hourly-wage-trend-over-time",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "4c32da21",
+                  "fields": [
+                    {
+                      "name": "Year",
+                      "expression": "`Year`"
+                    },
+                    {
+                      "name": "avg_hourly_rate",
+                      "expression": "`avg_hourly_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Bar 4",
+                "showDescription": true,
+                "description": "Shows how average hourly wages have changed year over year, helping identify long‑term trends and shifts in compensation outcomes."
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Year",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg_hourly_rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 61,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "average-hourly-wage-by-state",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bc94b4a4",
+                  "fields": [
+                    {
+                      "name": "placements",
+                      "expression": "`placements`"
+                    },
+                    {
+                      "name": "avg_hourly_rate",
+                      "expression": "`avg_hourly_rate`"
+                    },
+                    {
+                      "name": "state",
+                      "expression": "`state`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Average Hourly Wage by State",
+                "showDescription": true,
+                "description": "Compares average student wages across U.S. states to identify geographic differences in co‑op compensation."
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg_hourly_rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "state",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "placements",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 61,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "placement-channels-volume-vs-pay",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5f2da126",
+                  "fields": [
+                    {
+                      "name": "job_source",
+                      "expression": "`job_source`"
+                    },
+                    {
+                      "name": "sum(avg_hourly_rate)",
+                      "expression": "SUM(`avg_hourly_rate`)"
+                    },
+                    {
+                      "name": "avg_hourly_rate",
+                      "expression": "`avg_hourly_rate`"
+                    },
+                    {
+                      "name": "placements",
+                      "expression": "`placements`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Placement Channels — Volume vs Pay",
+                "showDescription": true,
+                "description": "Shows how different job placement channels compare based on the number of student placements and average hourly pay."
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg_hourly_rate",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "placements",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "job_source",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                },
+                "extra": [
+                  {
+                    "fieldName": "sum(avg_hourly_rate)"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 53,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "top-employers-placement-volume",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "26201661",
+                  "fields": [
+                    {
+                      "name": "employer",
+                      "expression": "`employer`"
+                    },
+                    {
+                      "name": "total_placements",
+                      "expression": "`total_placements`"
+                    },
+                    {
+                      "name": "avg_hourly_rate",
+                      "expression": "`avg_hourly_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Top Employers by Placement Volume",
+                "showDescription": true,
+                "description": "Lists employers with the highest number of student placements, helping LCS identify key employer partners and engagement \nopportunities."
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "employer"
+                  },
+                  {
+                    "fieldName": "total_placements"
+                  },
+                  {
+                    "fieldName": "avg_hourly_rate"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 68,
+            "width": 10,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "3a15e0a7",
+            "multilineTextboxSpec": {
+              "lines": [
+                "<span style=\"text-align:center;display:block\"><span style=\"font-size:24px;font-family:Times New Roman\">                                </span><span style=\"font-size:28px;font-family:Times New Roman\">  </span><span style=\"font-size:28px;font-family:Times New Roman\">**LCS Co-op & Scholarship Analytics Dashboard**</span></span>\n",
+                "\n",
+                "<span style=\"font-family:Times New Roman;font-size:18px\">This dashboard provides an overview of LCS co‑op outcomes, including student placements, employer participation, wage trends, and geographic distribution. </span><span style=\"font-family:Times New Roman;font-size:18px\">All insights are generated automatically from the most recent data to support consistent, data‑driven decision‑making.</span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "employer-hiring-volume-trends-2020-present",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "210fd95e",
+                  "fields": [
+                    {
+                      "name": "Employer",
+                      "expression": "`Employer`"
+                    },
+                    {
+                      "name": "Year",
+                      "expression": "`Year`"
+                    },
+                    {
+                      "name": "total_placements",
+                      "expression": "`total_placements`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Employer Hiring Volume Trends (2020–Present)",
+                "description": "Shows how student hiring volume has increased or decreased over time by employer."
+              },
+              "version": 3,
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 1
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ]
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Year",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "total_placements",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "Employer",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 41,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "employer-average-pay-trends-2020-present-1",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "210fd95e",
+                  "fields": [
+                    {
+                      "name": "Employer",
+                      "expression": "`Employer`"
+                    },
+                    {
+                      "name": "Year",
+                      "expression": "`Year`"
+                    },
+                    {
+                      "name": "avg_hourly_rate",
+                      "expression": "`avg_hourly_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Employer Average Pay Trends (2020–Present)",
+                "description": "Shows how average hourly pay has changed over time by employer."
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Year",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg_hourly_rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "Employer",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 47,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "churned-employers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8bf4b941",
+                  "fields": [
+                    {
+                      "name": "sum(count(1))",
+                      "expression": "SUM(`count(1)`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Churned Employers",
+                "description": "Number of employers that have not hired any students in the past \ntwo academic years."
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(count(1))"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "employer-churn-status-overview",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "8137e260",
+                  "fields": [
+                    {
+                      "name": "employer_count",
+                      "expression": "`employer_count`"
+                    },
+                    {
+                      "name": "churn_status",
+                      "expression": "`churn_status`"
+                    },
+                    {
+                      "name": "sum(employer_count)",
+                      "expression": "SUM(`employer_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "description": "Shows the number of employers classified as Active or Churned.\nAn employer is considered churned if they have not hired any students in the past two academic years.",
+                "title": "Employer Churn Status Overview"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "churn_status",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(employer_count)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "employer_count",
+                  "scale": {
+                    "type": "categorical",
+                    "mappings": [
+                      {
+                        "value": 2459,
+                        "color": {
+                          "themeColorType": "visualizationColors",
+                          "position": 4
+                        }
+                      }
+                    ]
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 24,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "churned-employers-1",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "c65ac6cd",
+                  "fields": [
+                    {
+                      "name": "employer",
+                      "expression": "`employer`"
+                    },
+                    {
+                      "name": "last_active_year",
+                      "expression": "`last_active_year`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Churned Employers",
+                "description": "Lists employers that have not hired any students in the last two academic years, indicating disengagement \nfrom the co‑op program."
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "employer"
+                  },
+                  {
+                    "fieldName": "last_active_year"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 24,
+            "width": 6,
+            "height": 17
+          }
+        },
+        {
+          "widget": {
+            "name": "active-employer-count-over-time-1",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f0ed753",
+                  "fields": [
+                    {
+                      "name": "Year",
+                      "expression": "`Year`"
+                    },
+                    {
+                      "name": "active_employers",
+                      "expression": "`active_employers`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": "Bar 14",
+                "description": "Tracks how the number of employers actively hiring students changes over time, providing context for employer disengagement trends."
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "Year",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "active_employers",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 32,
+            "width": 6,
+            "height": 9
+          }
+        },
+        {
+          "widget": {
+            "name": "9f8c26b4",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "state_placements_map",
+                  "fields": [
+                    {
+                      "name": "placements",
+                      "expression": "`placements`"
+                    },
+                    {
+                      "name": "avg_hourly_rate",
+                      "expression": "`avg_hourly_rate`"
+                    },
+                    {
+                      "name": "state_name",
+                      "expression": "`state_name`"
+                    },
+                    {
+                      "name": "state_code",
+                      "expression": "`state_code`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "frame": {
+                "showTitle": true,
+                "title": "Student Placement Density by State",
+                "showDescription": true,
+                "description": "Geographic visualization showing the number of co-op placements across U.S. states, highlighting regions with the highest student placement activity."
+              },
+              "widgetType": "choropleth-map",
+              "encodings": {
+                "color": {
+                  "fieldName": "placements",
+                  "scale": {
+                    "type": "quantitative",
+                    "colorRamp": {
+                      "mode": "scheme",
+                      "scheme": "redgrey"
+                    }
+                  }
+                },
+                "extra": [
+                  {
+                    "fieldName": "avg_hourly_rate"
+                  },
+                  {
+                    "fieldName": "state_name"
+                  }
+                ],
+                "region": {
+                  "regionType": "mapbox-v4-admin",
+                  "admin0": {
+                    "type": "value",
+                    "value": "USA",
+                    "geographicRole": "admin0-iso-3166-1-alpha-3"
+                  },
+                  "admin1": {
+                    "fieldName": "state_code",
+                    "type": "field",
+                    "geographicRole": "admin1-iso-3166-2"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 12,
+            "height": 10
+          }
+        },
+        {
+          "widget": {
+            "name": "ccc9f1a7",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "yoy_growth",
+                  "fields": [
+                    {
+                      "name": "Year",
+                      "expression": "`Year`"
+                    },
+                    {
+                      "name": "total_placements",
+                      "expression": "`total_placements`"
+                    },
+                    {
+                      "name": "yoy_growth_rate_pct",
+                      "expression": "`yoy_growth_rate_pct`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "frame": {
+                "showTitle": true,
+                "title": "Year-over-Year Placement Growth",
+                "showDescription": true,
+                "description": "Tracks annual placement volume (bars) and year-over-year growth percentage (line). The program experienced rapid expansion in 2021\n (peak: 3,341 placements, +245%), followed by a correction period (2022–2024) with negative growth rates as volume normalized.\nRecovery began in 2025 (+13.4%). Note: 2026 data excluded (incomplete year)."
+              },
+              "widgetType": "combo",
+              "encodings": {
+                "x": {
+                  "fieldName": "Year",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "total_placements",
+                        "displayName": "Total Placements"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    }
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "yoy_growth_rate_pct",
+                        "displayName": "YoY Growth %"
+                      }
+                    ],
+                    "scale": {
+                      "type": "quantitative"
+                    },
+                    "formatTemplate": "{{ @formatted }}%"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 16,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "top_10_churned_employers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "55784e66",
+                  "fields": [
+                    {
+                      "name": "last_active_year",
+                      "expression": "`last_active_year`"
+                    },
+                    {
+                      "name": "total_placements",
+                      "expression": "`total_placements`"
+                    },
+                    {
+                      "name": "employer",
+                      "expression": "`employer`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 High-Value Employers Who Have Churned",
+                "showDescription": true,
+                "description": "Shows employers that historically hired a large number of students but have not hired recently. \nThese are high‑impact churn cases that may require immediate re‑engagement."
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "total_placements",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "employer",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "last_active_year",
+                  "scale": {
+                    "type": "quantitative",
+                    "colorRamp": {
+                      "mode": "scheme",
+                      "scheme": "reds"
+                    }
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 16,
+            "width": 6,
+            "height": 8
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "global_filters",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "year_filter",
+            "queries": [
+              {
+                "name": "parameter_dashboards/01f13dba81c7107b8dbcaa7bad10dd32/datasets/01f13e5f79e416dc9744592349dbceab_selected_years",
+                "query": {
+                  "datasetName": "4c32da21",
+                  "parameters": [
+                    {
+                      "name": "selected_years",
+                      "keyword": "selected_years"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "scale": {
+                "type": "categorical",
+                "sort": {
+                  "by": "natural-order-reversed"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Year"
+              },
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "parameterName": "selected_years",
+                    "queryName": "parameter_dashboards/01f13dba81c7107b8dbcaa7bad10dd32/datasets/01f13e5f79e416dc9744592349dbceab_selected_years"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "24db5497",
+      "displayName": "LCS Employer Segmentation",
+      "layout": [
+        {
+          "widget": {
+            "name": "8f215695",
+            "multilineTextboxSpec": {
+              "lines": [
+                "<span style=\"text-align:center;display:block\"><span style=\"font-size:24px;font-family:Times New Roman\">**LCS Employer Segmentation Dashboard**</span></span>\n",
+                "\n",
+                "<span style=\"font-size:16px;font-family:Times New Roman\">This dashboard uses </span><span style=\"font-size:16px;font-family:Times New Roman\">**K-Means clustering (K=4)**</span><span style=\"font-size:16px;font-family:Times New Roman\"> to segment LCS co-op employers based on two key dimensions: </span><span style=\"font-size:16px;font-family:Times New Roman\">**total student placements (hiring volume)**</span><span style=\"font-size:16px;font-family:Times New Roman\"> and </span><span style=\"font-size:16px;font-family:Times New Roman\">**average hourly rate (compensation level)**</span><span style=\"font-size:16px;font-family:Times New Roman\">. The segmentation identifies four distinct employer tiers, </span><span style=\"font-size:16px;font-family:Times New Roman\">**ordered by average placement volume**</span><span style=\"font-size:16px;font-family:Times New Roman\">:</span>\n",
+                "\n",
+                "* <span style=\"font-size:16px;font-family:Times New Roman\">**Tier 0 — Anchor Partner**</span><span style=\"font-size:16px;font-family:Times New Roman\">: Highest volume employers with consistent rates </span>\n",
+                "* <span style=\"font-size:16px;font-family:Times New Roman\">**Tier 1 — Core Partners**</span><span style=\"font-size:16px;font-family:Times New Roman\">: High volume employers with moderate compensation </span>\n",
+                "* <span style=\"font-size:16px;font-family:Times New Roman\">**Tier 2 — Premium Partners**</span><span style=\"font-size:16px;font-family:Times New Roman\">: Moderate volume with higher-paying, competitive compensation </span>\n",
+                "* <span style=\"font-size:16px;font-family:Times New Roman\">**Tier 3 — Standard Partners**</span><span style=\"font-size:16px;font-family:Times New Roman\">: Largest segment by employer count, lower volume per employer, moderate pay </span>\n",
+                "\n",
+                "<span style=\"font-size:16px;font-family:Times New Roman\">The dashboard enables </span><span style=\"font-size:16px;font-family:Times New Roman\">**strategic employer relationship management**</span><span style=\"font-size:16px;font-family:Times New Roman\"> by visualizing segment characteristics, industry distribution, salary variance, and placement volume. Use these insights to prioritize engagement efforts, identify growth opportunities, and understand employer partner composition across the LCS co-op ecosystem.</span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "employer_scatter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "employer_segments",
+                  "fields": [
+                    {
+                      "name": "segment",
+                      "expression": "`segment`"
+                    },
+                    {
+                      "name": "placements",
+                      "expression": "`placements`"
+                    },
+                    {
+                      "name": "avg_hourly_rate",
+                      "expression": "`avg_hourly_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Employer Segmentation Map",
+                "showDescription": true,
+                "description": "Each point represents an employer, positioned by total placements (x-axis) and average hourly rate (y-axis). Colors \nindicate the assigned segment based on median thresholds."
+              },
+              "widgetType": "scatter",
+              "encodings": {
+                "x": {
+                  "fieldName": "placements",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg_hourly_rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "segment",
+                  "legend": {
+                    "position": "right",
+                    "title": "Segment"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 10
+          }
+        },
+        {
+          "widget": {
+            "name": "segment_distribution",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "segment_summary",
+                  "fields": [
+                    {
+                      "name": "employer_count",
+                      "expression": "`employer_count`"
+                    },
+                    {
+                      "name": "segment",
+                      "expression": "`segment`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Employer Count by Segment",
+                "showDescription": true,
+                "description": "Number of employers in each segment, showing the distribution across high/lower volume and \nhigh/lower pay categories."
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "employer_count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "segment",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 24,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "segment_summary_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "segment_summary",
+                  "fields": [
+                    {
+                      "name": "segment",
+                      "expression": "`segment`"
+                    },
+                    {
+                      "name": "employer_count",
+                      "expression": "`employer_count`"
+                    },
+                    {
+                      "name": "avg_placements",
+                      "expression": "`avg_placements`"
+                    },
+                    {
+                      "name": "avg_hourly_rate",
+                      "expression": "`avg_hourly_rate`"
+                    },
+                    {
+                      "name": "total_placements",
+                      "expression": "`total_placements`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Segment Summary",
+                "showDescription": true,
+                "description": "Key metrics for each employer segment: count of employers, average placements per employer, average hourly rate, \nand total student placements."
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "segment"
+                  },
+                  {
+                    "fieldName": "employer_count"
+                  },
+                  {
+                    "fieldName": "avg_placements"
+                  },
+                  {
+                    "fieldName": "avg_hourly_rate"
+                  },
+                  {
+                    "fieldName": "total_placements"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 12,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "cluster_quality_chart",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cluster_quality",
+                  "fields": [
+                    {
+                      "name": "k",
+                      "expression": "`k`"
+                    },
+                    {
+                      "name": "inertia",
+                      "expression": "`inertia`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "annotations": [
+                {
+                  "type": "vertical-line",
+                  "encodings": {
+                    "x": {
+                      "dataType": "INTEGER",
+                      "dataValue": "4"
+                    },
+                    "label": {
+                      "value": "Elbow at K=4"
+                    },
+                    "color": {
+                      "value": "#FF0000"
+                    }
+                  }
+                }
+              ],
+              "frame": {
+                "showTitle": true,
+                "title": "Elbow Method — Optimal Number of Clusters",
+                "showDescription": true,
+                "description": "Shows inertia (within-cluster sum of squares) for different values of K (number of clusters). The \"elbow\" at K=4 indicates \nthe optimal trade-off between model complexity and clustering quality, matching the gold layer analysis."
+              },
+              "mark": {
+                "marker": {
+                  "shape": "circle"
+                }
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "k",
+                  "displayName": "Number of Clusters (K)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "inertia",
+                  "displayName": "Inertia (Within-Cluster Sum of Squares)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 9,
+            "width": 6,
+            "height": 10
+          }
+        },
+        {
+          "widget": {
+            "name": "segment_share_pie",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "segment_summary",
+                  "fields": [
+                    {
+                      "name": "total_placements",
+                      "expression": "`total_placements`"
+                    },
+                    {
+                      "name": "segment",
+                      "expression": "`segment`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Segment Share of Total Placements",
+                "showDescription": true,
+                "description": "Shows what percentage of total student placements each employer segment represents. Visualizes the \nrelative contribution of each tier to overall placement volume."
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "total_placements",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Total Placements"
+                },
+                "color": {
+                  "fieldName": "segment",
+                  "legend": {
+                    "position": "right"
+                  },
+                  "displayName": "Segment",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "angle-reversed"
+                    }
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 24,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "industry_distribution_chart",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "industry_by_segment",
+                  "fields": [
+                    {
+                      "name": "industry",
+                      "expression": "`industry`"
+                    },
+                    {
+                      "name": "employer_count",
+                      "expression": "`employer_count`"
+                    },
+                    {
+                      "name": "segment",
+                      "expression": "`segment`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Industry Distribution by Segment",
+                "showDescription": true,
+                "description": "Shows which industries are represented in each employer tier, with bar segments indicating employer count per industry."
+              },
+              "mark": {
+                "layout": "stack"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "employer_count",
+                  "displayName": "Employer Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "segment",
+                  "displayName": "Segment",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "natural-order"
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "industry",
+                  "legend": {
+                    "position": "right"
+                  },
+                  "displayName": "Industry",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 39,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "salary_distribution_box",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "salary_distribution_boxplot",
+                  "fields": [
+                    {
+                      "name": "segment",
+                      "expression": "`segment`"
+                    },
+                    {
+                      "name": "min(avg_hourly_rate)",
+                      "expression": "MIN(`avg_hourly_rate`)"
+                    },
+                    {
+                      "name": "q1(avg_hourly_rate)",
+                      "expression": "PERCENTILE(`avg_hourly_rate`, 0.25)"
+                    },
+                    {
+                      "name": "median(avg_hourly_rate)",
+                      "expression": "MEDIAN(`avg_hourly_rate`)"
+                    },
+                    {
+                      "name": "q3(avg_hourly_rate)",
+                      "expression": "PERCENTILE(`avg_hourly_rate`, 0.75)"
+                    },
+                    {
+                      "name": "max(avg_hourly_rate)",
+                      "expression": "MAX(`avg_hourly_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Salary Distribution by Segment",
+                "showTitle": true,
+                "description": "Shows the spread and variance of average hourly rates within each employer segment. Box plot displays quartiles, median, min/max values to answer: How homogeneous are employers within each segment?",
+                "showDescription": true
+              },
+              "widgetType": "box",
+              "encodings": {
+                "x": {
+                  "fieldName": "segment",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "whiskerStart": {
+                    "fieldName": "min(avg_hourly_rate)"
+                  },
+                  "boxStart": {
+                    "fieldName": "q1(avg_hourly_rate)"
+                  },
+                  "boxMid": {
+                    "fieldName": "median(avg_hourly_rate)"
+                  },
+                  "boxEnd": {
+                    "fieldName": "q3(avg_hourly_rate)"
+                  },
+                  "whiskerEnd": {
+                    "fieldName": "max(avg_hourly_rate)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 32,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_total_segments",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "segment_kpis",
+                  "fields": [
+                    {
+                      "name": "total_segments",
+                      "expression": "`total_segments`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Total Segments",
+                "showDescription": true,
+                "description": "Number of employer segments identified through K-Means \nclustering\n"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_segments"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_total_employers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "segment_kpis",
+                  "fields": [
+                    {
+                      "name": "total_employers",
+                      "expression": "`total_employers`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Total Employers",
+                "showDescription": true,
+                "description": "Total number of employers included in the segmentation analysis"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_employers"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 5,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_avg_rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "segment_kpis",
+                  "fields": [
+                    {
+                      "name": "overall_avg_rate",
+                      "expression": "`overall_avg_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Average Hourly Rate",
+                "showDescription": true,
+                "description": "Overall average hourly rate across all employers in all segments"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "overall_avg_rate"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 5,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_total_placements",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "segment_kpis",
+                  "fields": [
+                    {
+                      "name": "total_placements",
+                      "expression": "`total_placements`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Total Placements",
+                "showDescription": true,
+                "description": "Total student placements across all segmented employers"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_placements"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 5,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "all_employers_directory",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "all_employers_by_segment",
+                  "fields": [
+                    {
+                      "name": "segment",
+                      "expression": "`segment`"
+                    },
+                    {
+                      "name": "employer",
+                      "expression": "`employer`"
+                    },
+                    {
+                      "name": "placements",
+                      "expression": "`placements`"
+                    },
+                    {
+                      "name": "avg_hourly_rate",
+                      "expression": "`avg_hourly_rate`"
+                    },
+                    {
+                      "name": "median_hourly_rate",
+                      "expression": "`median_hourly_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Complete Employer Directory by Segment",
+                "showDescription": true,
+                "description": "Comprehensive list of all 282 employers with segment assignments, placement volumes, and compensation metrics. Sorted by segment tier and hiring volume."
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "segment",
+                    "displayName": "Segment"
+                  },
+                  {
+                    "fieldName": "employer",
+                    "displayName": "Employer"
+                  },
+                  {
+                    "fieldName": "placements",
+                    "displayName": "Total Placements"
+                  },
+                  {
+                    "fieldName": "avg_hourly_rate",
+                    "displayName": "Avg Hourly Rate"
+                  },
+                  {
+                    "fieldName": "median_hourly_rate",
+                    "displayName": "Median Hourly Rate"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 46,
+            "width": 12,
+            "height": 15
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
